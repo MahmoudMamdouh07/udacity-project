@@ -266,7 +266,7 @@ jobs:
     docker:
       - image: circleci/node:13.8.0
     steps:
-       - checkout
+      - checkout
       - restore_cache:
           keys: [backend-build-cache]
       - attach_workspace:

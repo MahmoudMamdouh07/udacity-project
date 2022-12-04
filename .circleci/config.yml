@@ -1,6 +1,13 @@
 version: 2.1
-
+orbs:
+  slack: circleci/slack@4.9.3
 commands:
+  notify_on_failure:
+    steps:
+      slack/notify:
+        event: fail
+        channel: 02-general
+        template: basic_fail_1
   # create-dotenv-file:
   #   description: Create .env file
   #   steps:
@@ -79,7 +86,7 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: my-frontend-cache
-
+      - notify_on_failure
   build-backend:
     docker:
       - image: cimg/node:13.8.0
@@ -96,6 +103,7 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: my-backend-cache
+      - notify_on_failure
 
   test-frontend:
     docker:
@@ -110,6 +118,7 @@ jobs:
             cd ./frontend
             npm i
             npm test
+      - notify_on_failure
 
   test-backend:
     docker:
@@ -124,7 +133,8 @@ jobs:
             cd ./backend
             npm i
             npm test
-            
+      - notify_on_failure
+   
   scan-frontend:
     docker:
       - image: cimg/node:13.8.0
@@ -139,6 +149,7 @@ jobs:
             npm i
             npm audit fix --force --audit-level=critical
             npm audit --audit-level=critical
+      - notify_on_failure
 
   scan-backend:
     docker:
@@ -155,7 +166,8 @@ jobs:
             npm audit fix --force --audit-level=critical
             npm audit fix --force --audit-level=critical
             npm audit --audit-level=critical
-          
+      - notify_on_failure
+  
 #   deploy-infrastructure:
 #     docker:
 #       - image: amazon/aws-cli
@@ -435,7 +447,14 @@ jobs:
 #                     echo "$OLD_WORKFLOW_ID==$NEW_WORKFLOW_ID: the old and new stacks are the same, no changes applied"
 #                 fi
 #             fi
-
+  notify_on_success:
+    docker: 
+      - image: cimg/base:stable
+    steps: 
+      - slack/notify:
+          event: pass
+          channel: 02-general
+          template: success_tagged_deployment_1
 workflows:
   default:
     jobs:
@@ -449,6 +468,12 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
+      - notify_on_success:
+          requires:
+            - test-frontend
+            - test-backend
+            - scan-backend
+            - scan-frontend
       # - deploy-infrastructure:
       #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       #     filters:

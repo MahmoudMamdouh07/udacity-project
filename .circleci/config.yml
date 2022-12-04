@@ -69,7 +69,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build]
+          keys: [my-frontend-cache]
       - run:
           name: Build front-end
           command: |
@@ -97,43 +97,33 @@ jobs:
           paths: [backend/node_modules]
           key: my-backend-cache
 
-#   test-frontend:
-#     docker:
-#       - image: circleci/node:13.8.0
-#     steps:
-#       - checkout
-#       - restore_cache:
-#           keys: [my-frontend-cache]
-#       - run:
-#           name: Test frontend
-#           command: |
-#             cd ./frontend
-#             npm i
-#             npm run test
-#       - slack/notify:
-#           branch_pattern: .+
-#           event: fail
-#           channel: $SLACK_DEFAULT_CHANNEL
-#           template: basic_fail_1
+  test-frontend:
+    docker:
+      - image: cimg/node:13.8.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys: [my-frontend-cache]
+      - run:
+          name: Unit Test frontend
+          command: |
+            cd ./frontend
+            npm i
+            npm test
 
-#   test-backend:
-#     docker:
-#       - image: circleci/node:13.8.0
-#     steps:
-#       - checkout
-#       - restore_cache:
-#           keys: [my-backend-cache]
-#       - run:
-#           name: Test backend
-#           command: |
-#             cd ./backend
-#             npm i
-#             npm run test
-#       - slack/notify:
-#           channel: $SLACK_DEFAULT_CHANNEL
-#           template: basic_fail_1
-#           branch_pattern: .+
-#           event: fail
+  test-backend:
+    docker:
+      - image: cimg/node:13.8.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys: [my-backend-cache]
+      - run:
+          name: Unit Test backend
+          command: |
+            cd ./backend
+            npm i
+            npm test
             
 #   scan-frontend:
 #     docker:

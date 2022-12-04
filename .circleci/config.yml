@@ -35,12 +35,12 @@ commands:
           command: |
             aws s3 rm s3://udapeople-<< parameters.myWorkFlowId >> --recursive
             aws s3 rb s3://udapeople-<< parameters.myWorkFlowId >> --force
-            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.myWorkFlowId >>
+            aws cloudformation delete-stack --stack-name my-backend-stack-<< parameters.myWorkFlowId >>
       - run:
           name: Destroy frontend stack
           when: on_fail
           command: |
-            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.myWorkFlowId >>
+            aws cloudformation delete-stack --stack-name my-frontend-stack-<< parameters.myWorkFlowId >>
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -78,20 +78,20 @@ jobs:
             npm run build
       - save_cache:
           paths: [frontend/node_modules]
-          key: frontend-build-cache
+          key: my-frontend-cache
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL
           branch_pattern: .+
           template: basic_fail_1
           event: fail
-          
+
   build-backend:
     docker:
       - image: circleci/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build-cache]
+          keys: [my-backend-cache]
       - run:
           name: Back-end build
           command: |
@@ -100,7 +100,7 @@ jobs:
             npm run build
       - save_cache:
           paths: [backend/node_modules]
-          key: backend-build-cache
+          key: my-backend-cache
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL
           template: basic_fail_1
@@ -113,7 +113,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build-cache]
+          keys: [my-frontend-cache]
       - run:
           name: Test frontend
           command: |
@@ -132,7 +132,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build-cache]
+          keys: [my-backend-cache]
       - run:
           name: Test backend
           command: |
@@ -144,8 +144,6 @@ jobs:
           template: basic_fail_1
           branch_pattern: .+
           event: fail
-          channel: $SLACK_DEFAULT_CHANNEL
-          template: basic_fail_1
             
   scan-frontend:
     docker:
@@ -153,7 +151,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build-cache]
+          keys: [my-frontend-cache]
       - run:
           name: Scan frontend
           command: |
@@ -171,7 +169,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build-cache]
+          keys: [my-backend-cache]
       - run:
           name: Scan backend
           command: |
@@ -189,23 +187,23 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install tar and zip utilities
+          name: Install tar and zip
           command: yum -y install tar gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
-              --tags project=project=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}  \
-              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=project=my-backend-${CIRCLE_WORKFLOW_ID:0:7}  \
+              --stack-name "my-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
       - run:
           name: Ensure front-end infrastructure exist
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
-              --tags project=udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
-              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=my-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
+              --stack-name "my-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
               exit 1
       - run:
@@ -214,12 +212,12 @@ jobs:
             pwd
             BACKEND_IP=$(aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --filters "Name=tag:project,Values=my-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text)
             echo "BACKEND_IP=${BACKEND_IP}"
             curl -H "Content-Type: text/plain" -H "token: 7079126b-54c1-4ae1-b7cf-577d8a27c76f" --request PUT --data "$BACKEND_IP" https://api.memstash.io/values/BACKEND_IP_${CIRCLE_WORKFLOW_ID:0:7}
       - run:
-          name: Add back-end ip to ansible inventory
+          name: Adding backend ip to ansible
           command: |
             pwd
             BACKEND_IP=$(curl -H "token: 7079126b-54c1-4ae1-b7cf-577d8a27c76f" --request GET https://api.memstash.io/values/BACKEND_IP_${CIRCLE_WORKFLOW_ID:0:7})
@@ -231,6 +229,7 @@ jobs:
             - ./.circleci/ansible/inventory.txt
       - destroy-environment:
           myWorkFlowId: ${CIRCLE_WORKFLOW_ID:0:7}  
+  
   configure-infrastructure:
     docker:
       - image: python:3.7-alpine3.11
@@ -268,7 +267,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build-cache]
+          keys: [my-backend-cache]
       - attach_workspace:
           at: .
       - create-dotenv-file
@@ -284,15 +283,48 @@ jobs:
           command: |
             if grep "has been executed successfully" ./backend/migrations_log.txt;
             then
-              echo "Database migration has been executed successfully"
+              echo "Database migration executed successfully"
               curl -H "Content-Type: text/plain" -H "token: 7079126b-54c1-4ae1-b7cf-577d8a27c76f" --request PUT --data "success" https://api.memstash.io/values/DB_MIGRATION_STATUS_${CIRCLE_WORKFLOW_ID:0:7}
             else
-              echo "Database migration has failed, verify DB setup!"
+              echo "Database migration failed!"
               curl -H "Content-Type: text/plain" -H "token: 7079126b-54c1-4ae1-b7cf-577d8a27c76f" --request PUT --data "failure" https://api.memstash.io/values/DB_MIGRATION_STATUS_${CIRCLE_WORKFLOW_ID:0:7}
             fi      
       - destroy-environment:
           myWorkFlowId: ${CIRCLE_WORKFLOW_ID:0:7}      
 
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: 
+            - "e2:c9:22:04:6c:5c:91:d9:6b:fa:69:21:5b:be:a7:ad"
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys: [my-backend-cache]
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            apk add --no-cache curl
+            apk add --no-cache openssh-client
+            apk add --no-cache --upgrade bash
+            pip install awscli
+      - create-dotenv-file
+      - run:
+          name: Deploy backend
+          command: |
+            pwd
+            tar czf backend.tar.gz backend/
+            export ANSIBLE_HOST_KEY_CHECKING=false
+            ansible-playbook -i ./.circleci/ansible/inventory.txt ./.circleci/ansible/deploy-backend.yml -vvv
+      - destroy-environment:
+          myWorkFlowId: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          myWorkFlowId: ${CIRCLE_WORKFLOW_ID:0:7}  
+  
   deploy-frontend:
     docker:
       - image: amazon/aws-cli
@@ -335,39 +367,7 @@ jobs:
       - revert-migrations:
           myWorkFlowId: ${CIRCLE_WORKFLOW_ID:0:7}  
 
-  deploy-backend:
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints: 
-            - "e2:c9:22:04:6c:5c:91:d9:6b:fa:69:21:5b:be:a7:ad"
-      - attach_workspace:
-          at: .
-      - restore_cache:
-          keys: [backend-build-cache]
-      - run:
-          name: Install dependencies
-          command: |
-            apk add --update ansible
-            apk add --no-cache curl
-            apk add --no-cache openssh-client
-            apk add --no-cache --upgrade bash
-            pip install awscli
-      - create-dotenv-file
-      - run:
-          name: Deploy backend
-          command: |
-            pwd
-            tar czf backend.tar.gz backend/
-            export ANSIBLE_HOST_KEY_CHECKING=false
-            ansible-playbook -i ./.circleci/ansible/inventory.txt ./.circleci/ansible/deploy-backend.yml -vvv
-      - destroy-environment:
-          myWorkFlowId: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          myWorkFlowId: ${CIRCLE_WORKFLOW_ID:0:7}  
-  
+
   smoke-test:
     docker:
       - image: alpine:latest  
@@ -454,8 +454,8 @@ cleanup:
                 then
                     echo "$OLD_WORKFLOW_ID!=$NEW_WORKFLOW_ID: the old stack and files are going to be deleted"
                     aws s3 rm "s3://udapeople-${OLD_WORKFLOW_ID}" --recursive
-                    aws cloudformation delete-stack --stack-name "udapeople-frontend-${OLD_WORKFLOW_ID}"
-                    aws cloudformation delete-stack --stack-name "udapeople-backend-${OLD_WORKFLOW_ID}"
+                    aws cloudformation delete-stack --stack-name "my-frontend-stack-${OLD_WORKFLOW_ID}"
+                    aws cloudformation delete-stack --stack-name "my-backend-stack-${OLD_WORKFLOW_ID}"
                 else
                     echo "$OLD_WORKFLOW_ID==$NEW_WORKFLOW_ID: the old and new stacks are the same, no changes applied"
                 fi

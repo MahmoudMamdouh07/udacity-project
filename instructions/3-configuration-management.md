@@ -213,7 +213,7 @@ The UdaPeople finance department likes it when your AWS bills are more or less t
           --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
     ```
     - Remove old stacks/files
-      - Back-end stack (example: `aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"`)
+      - Back-end stack (example: `aws cloudformation delete-stack --stack-name "my-backend-stack-${OldWorkflowID}"`)
       - Front-end files in S3 (example: `aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive`)
       - Front-end stack
 - Provide a screenshot of the successful job. **[SCREENSHOT09]**

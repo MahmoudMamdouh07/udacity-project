@@ -84,6 +84,7 @@ jobs:
           branch_pattern: .+
           template: basic_fail_1
           event: fail
+          
   build-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -105,7 +106,6 @@ jobs:
           template: basic_fail_1
           branch_pattern: .+
           event: fail
-          channel: $SLACK_DEFAULT_CHANNEL
 
   test-frontend:
     docker:

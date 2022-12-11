@@ -231,7 +231,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["e4:d6:d8:11:5c:ac:44:8f:d9:7e:db:e8:5e:74:1c:be"]
       - attach_workspace:
-          at: ~/
+          at: .
       - run:
           name: Configure server
           command: |

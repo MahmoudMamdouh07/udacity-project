@@ -56,11 +56,6 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            command: echo "myWorkFlowId=${CIRCLE_WORKFLOW_ID:0:7}"
-      - run:
-          name: Destroy backend stack
-          when: on_fail
-          command: |
             aws cloudformation delete-stack --stack-name my-backend-<< parameters.myWorkFlowId >>
             aws s3 rm s3://udapeople-<< parameters.myWorkFlowId >> --recursive
             aws cloudformation delete-stack --stack-name my-frontend-<< parameters.myWorkFlowId >>
@@ -228,6 +223,7 @@ jobs:
     steps:
       - checkout
       - install_ansible
+      - install_aws_cli
       - add_ssh_keys:
           fingerprints: ["e4:d6:d8:11:5c:ac:44:8f:d9:7e:db:e8:5e:74:1c:be"]
       - attach_workspace:

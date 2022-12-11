@@ -91,7 +91,7 @@ jobs:
       - run:
           name: Build front-end
           command: |
-            cd ./frontend
+            cd frontend
             npm i
             npm run build
       - save_cache:
@@ -108,7 +108,7 @@ jobs:
       - run:
           name: Back-end build
           command: |
-            cd ./backend
+            cd backend
             npm i
             npm run build
       - save_cache:
@@ -126,7 +126,7 @@ jobs:
       - run:
           name: Unit Test frontend
           command: |
-            cd ./frontend
+            cd frontend
             npm i
             npm test
       - notify_on_failure
@@ -141,7 +141,7 @@ jobs:
       - run:
           name: Unit Test backend
           command: |
-            cd ./backend
+            cd backend
             npm i
             npm test
       - notify_on_failure
@@ -156,7 +156,7 @@ jobs:
       - run:
           name: Scan frontend
           command: |
-            cd ./frontend
+            cd frontend
             npm i
             npm audit fix --force --audit-level=critical
             npm audit --audit-level=critical
@@ -172,7 +172,7 @@ jobs:
       - run:
           name: Scan backend
           command: |
-            cd ./backend
+            cd backend
             npm i
             npm audit fix --force --audit-level=critical
             npm audit fix --force --audit-level=critical
@@ -212,9 +212,9 @@ jobs:
             echo ${BACKEND_IP} >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
-          root: .
+          root: ~/
           paths:
-            - ./.circleci/ansible/inventory.txt
+            - project/.circleci/ansible/inventory.txt
       - destroy-environment  
 
   configure-infrastructure:
@@ -227,7 +227,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["e4:d6:d8:11:5c:ac:44:8f:d9:7e:db:e8:5e:74:1c:be"]
       - attach_workspace:
-          at: .
+          at: ~/
       - run:
           name: Configure server
           command: |
@@ -468,8 +468,8 @@ workflows:
           filters:
             branches:
               only: [master]
-      # - configure-infrastructure:
-      #     requires: [deploy-infrastructure]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
       # - run-migrations:
       #     requires: [configure-infrastructure]
       # - deploy-frontend:

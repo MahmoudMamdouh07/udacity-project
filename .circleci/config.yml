@@ -9,6 +9,7 @@ commands:
           event: fail
           channel: 02-general
           template: basic_fail_1
+
   install_aws_cli:
     description: Install AWS CLI
     steps: 
@@ -18,6 +19,7 @@ commands:
                 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                 unzip awscliv2.zip
                 sudo ./aws/install
+                
   install_ansible:
     description: Install Ansible
     steps: 
@@ -60,26 +62,6 @@ commands:
             aws cloudformation delete-stack --stack-name my-backend-<< parameters.myWorkFlowId >>
             aws s3 rm s3://udapeople-<< parameters.myWorkFlowId >> --recursive
             aws cloudformation delete-stack --stack-name my-frontend-<< parameters.myWorkFlowId >>
-
-  revert-migrations:
-    description: Revert the last migration if successfully run in the current workflow.
-    parameters:
-      myWorkFlowId:
-        type: string    
-    steps:
-      - run:
-          name: Revert migrations
-          when: on_fail
-          command: |
-            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS=$(curl -H "token: 7079126b-54c1-4ae1-b7cf-577d8a27c76f" --request GET https://api.memstash.io/values/DB_MIGRATION_STATUS_<< parameters.myWorkFlowId >>)
-            SUCCESS = 1
-            if(( $SUCCESS==1 )); 
-            then
-              cd ./backend
-              npm install
-              npm run migrations:revert
-            fi
             
 jobs:
   build-frontend:

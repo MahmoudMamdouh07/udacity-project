@@ -1,5 +1,1 @@
-[web]
-
-
-[web:vars]
-ansible_password=vagrant
+[all]

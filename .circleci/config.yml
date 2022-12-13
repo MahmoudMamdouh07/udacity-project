@@ -365,38 +365,37 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-#   cloudfront-update:
-#     docker:
-#       - image: amazon/aws-cli
-#     steps:
-#       - checkout
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             yum install -y tar gzip curl
-#             curl -sL https://rpm.nodesource.com/setup_10.x | bash -
-#             yum install -y nodejs
-#       - run:
-#           name: Send old workflow ID to memstash
-#           working_directory: ./.circleci/files
-#           command: |
-#             OLD_WORKFLOW_ID=$(aws cloudformation list-exports \
-#               --query "Exports[?Name==\`myWorkFlowId\`].Value" \
-#               --no-paginate --output text)
-#             echo "OLD_WORKFLOW_ID=$OLD_WORKFLOW_ID"
-#             curl -H "Content-Type: text/plain" -H "token: 7079126b-54c1-4ae1-b7cf-577d8a27c76f" --request PUT --data "$OLD_WORKFLOW_ID" https://api.memstash.io/values/OLD_WORKFLOW_ID
-#       - run:
-#           name: Update cloudfront distribution
-#           command: |
-#             aws cloudformation deploy \
-#               --template-file ./.circleci/files/cloudfront.yml \
-#               --tags project=udapeople \
-#               --stack-name "udapeople-cloudfront-production" \
-#               --parameter-overrides myWorkFlowId="${CIRCLE_WORKFLOW_ID:0:7}"
-#       - destroy-environment:
-#           myWorkFlowId: ${CIRCLE_WORKFLOW_ID:0:7}
-#       - revert-migrations:
-#           myWorkFlowId: ${CIRCLE_WORKFLOW_ID:0:7}  
+  cloudfront-update:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - install_aws_cli
+      - install_nodejs
+      - run:
+          name: Save Old Workflow ID to kvdb.io
+          command: |
+            export OLD_WORKFLOW_ID=$(aws cloudformation \
+                      list-exports --query "Exports[?Name==\`myWorkFlowId\`].Value" \
+                      --no-paginate --output text)
+            echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
+            curl https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "${OLD_WORKFLOW_ID}"
+      - run:
+          name: change the cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --parameter-overrides myWorkFlowId="${CIRCLE_WORKFLOW_ID:0:7}" \
+              --stack-name InitialStack
+          name: change the cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+              --template-file ./.circleci/files/cloudfront.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-cloudfront-production" \
+              --parameter-overrides myWorkFlowId="${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment
+      - revert-migrations
 
 # cleanup:
 #     docker:
@@ -467,7 +466,7 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
-      # - cloudfront-update:
-      #     requires: [smoke-test]
+      - cloudfront-update:
+          requires: [smoke-test]
       # - cleanup:
       #     requires: [cloudfront-update]

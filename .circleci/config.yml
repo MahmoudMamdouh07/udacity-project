@@ -387,13 +387,6 @@ jobs:
               --template-file .circleci/files/cloudfront.yml \
               --parameter-overrides myWorkFlowId="${CIRCLE_WORKFLOW_ID:0:7}" \
               --stack-name InitialStack
-          name: change the cloudfront distribution
-          command: |
-            aws cloudformation deploy \
-              --template-file ./.circleci/files/cloudfront.yml \
-              --tags project=udapeople \
-              --stack-name "udapeople-cloudfront-production" \
-              --parameter-overrides myWorkFlowId="${CIRCLE_WORKFLOW_ID:0:7}"
       - destroy-environment
       - revert-migrations
 

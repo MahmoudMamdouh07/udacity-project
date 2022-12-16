@@ -7,7 +7,7 @@ commands:
     steps:
       - slack/notify:
           event: fail
-          channel: 02-general
+          channel: udapeople
           template: basic_fail_1
 
   install_nodejs:
@@ -422,7 +422,7 @@ jobs:
     steps: 
       - slack/notify:
           event: pass
-          channel: 02-general
+          channel: udapeople
           template: success_tagged_deployment_1
           
 workflows:

@@ -1,0 +1,5 @@
+Github url: https://github.com/MahmoudMamdouh07/udacity-project
+S3 url: http://udapeople-311065d.s3.amazonaws.com/index.html#/employees
+Distribution url: http://d60ppr2sti6hs.cloudfront.net/#/employees
+Backend ec2 DNS: ec2-3-230-83-33.compute-1.amazonaws.com
+Prometheus Server DNS: ec2-52-201-233-213.compute-1.amazonaws.com
